@@ -9,7 +9,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                sh 'mvn clean compile'
+                sh 'mvn clean package'
+            }
+        }
+
+        stage('Test') {
+            steps {
+                sh 'mvn test'
             }
         }
 
@@ -19,7 +25,7 @@ pipeline {
                     withCredentials([string(credentialsId: 'sonar-token', variable: 'SONAR_TOKEN')]) {
                         sh """
                         mvn sonar:sonar \
-                        -Dsonar.projectKey=sonar-demo \
+                        -Dsonar.projectKey=demo-app \
                         -Dsonar.host.url=http://sonarqube:9000 \
                         -Dsonar.login=$SONAR_TOKEN
                         """
@@ -36,9 +42,32 @@ pipeline {
             }
         }
 
-        stage('Success') {
+        stage('Upload Artifact to Nexus (SECURE)') {
             steps {
-                echo "CI/CD Pipeline Passed ✅"
+                withCredentials([usernamePassword(
+                    credentialsId: 'nexus-creds',
+                    usernameVariable: 'NEXUS_USER',
+                    passwordVariable: 'NEXUS_PASS'
+                )]) {
+                    sh '''
+                    echo "Creating secure Maven settings..."
+
+                    cat > settings.xml <<EOF
+<settings>
+  <servers>
+    <server>
+      <id>nexus</id>
+      <username>$NEXUS_USER</username>
+      <password>$NEXUS_PASS</password>
+    </server>
+  </servers>
+</settings>
+EOF
+
+                    echo "Deploying artifact to Nexus..."
+                    mvn deploy -s settings.xml
+                    '''
+                }
             }
         }
     }
