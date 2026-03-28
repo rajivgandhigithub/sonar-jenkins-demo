@@ -5,6 +5,14 @@
   <artifactId>sonar-demo</artifactId>
   <version>1.0</version>
 
+  <!-- 🔐 ADD THIS BLOCK HERE -->
+  <distributionManagement>
+    <repository>
+      <id>nexus</id>
+      <url>http://nexus:8081/repository/rajiv-maven-releases/</url>
+    </repository>
+  </distributionManagement>
+
   <build>
     <plugins>
       <plugin>
@@ -14,4 +22,5 @@
       </plugin>
     </plugins>
   </build>
+
 </project>
