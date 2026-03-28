@@ -7,12 +7,6 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/YOUR_USERNAME/sonar-jenkins-demo.git'
-            }
-        }
-
         stage('Build') {
             steps {
                 sh 'mvn clean compile'
@@ -44,7 +38,7 @@ pipeline {
 
         stage('Success') {
             steps {
-                echo "Quality Passed ✅"
+                echo "CI/CD Pipeline Passed ✅"
             }
         }
     }
