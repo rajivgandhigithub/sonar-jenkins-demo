@@ -2,45 +2,40 @@ package com.example;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 
 public class App {
-    public static void main(String[] args) throws Exception {
-        // ❌ Bug: Division by zero
+    public static void main(String[] args) {
+        // ✅ No division by zero
         int x = 10;
-        int y = 0;
+        int y = 2;
         System.out.println("Result: " + (x / y));
 
-        // ❌ Vulnerability: Hardcoded credentials
-        String user = "admin";
-        String password = "password123";
-        Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/test", user, password);
-        Statement stmt = conn.createStatement();
+        // ✅ Credentials should be externalized (e.g., environment variables or config)
+        String user = System.getenv("DB_USER");
+        String password = System.getenv("DB_PASS");
 
-        // ❌ Vulnerability: SQL Injection
-        String unsafeUserInput = args.length > 0 ? args[0] : "1";
-        ResultSet rs = stmt.executeQuery("SELECT * FROM users WHERE id = '" + unsafeUserInput + "'");
-        while (rs.next()) {
-            System.out.println("User: " + rs.getString("name"));
-        }
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost/test", user, password)) {
+            // ✅ Use PreparedStatement to avoid SQL injection
+            String query = "SELECT * FROM users WHERE id = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(query)) {
+                String safeUserInput = args.length > 0 ? args[0] : "1";
+                pstmt.setString(1, safeUserInput);
 
-        // ❌ Code Smell: Dead code / meaningless condition
-        if (true == true) {
-            System.out.println("This is unnecessary logic");
-        }
-
-        // ❌ Code Smell: Empty catch block
-        try {
-            int z = Integer.parseInt("abc");
+                try (ResultSet rs = pstmt.executeQuery()) {
+                    while (rs.next()) {
+                        System.out.println("User: " + rs.getString("name"));
+                    }
+                }
+            }
         } catch (Exception e) {
-            // nothing here → SonarQube flags as code smell
+            // ✅ Proper exception handling
+            System.err.println("Database error: " + e.getMessage());
         }
 
-        // ❌ Code Duplication: Repeated logic
-        printMessage("Hello");
-        printMessage("Hello");
-        printMessage("Hello"); // repeated again
+        // ✅ No unnecessary conditions or duplication
+        printMessage("Hello, SonarQube!");
     }
 
     public static void printMessage(String msg) {
